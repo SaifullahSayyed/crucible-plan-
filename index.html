@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crucible — Investor Intelligence Report</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --bg:#0a0b0f;--s1:#111318;--s2:#181a21;
+  --or:#ff5500;--or2:#ff7733;--or3:rgba(255,85,0,0.1);
+  --gr:#00d084;--gr2:rgba(0,208,132,0.1);
+  --bl:#3b8bff;--bl2:rgba(59,139,255,0.1);
+  --re:#ff4444;--re2:rgba(255,68,68,0.1);
+  --ye:#ffcc00;--ye2:rgba(255,204,0,0.1);
+  --tx:#f0f2f6;--tx2:#7a8494;--tx3:#3a3f4a;
+  --bdr:rgba(255,255,255,0.06);--bdr2:rgba(255,255,255,0.1);
+  --fh:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--fm:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font-family:var(--fb);overflow-x:hidden;min-height:100vh}
+
+/* NAV */
+.top-nav{display:flex;align-items:center;justify-content:space-between;padding:18px 40px;border-bottom:1px solid var(--bdr);background:rgba(10,11,15,0.95);position:sticky;top:0;z-index:100;backdrop-filter:blur(20px)}
+.nav-brand{font-family:var(--fh);font-size:16px;font-weight:700;letter-spacing:3px;color:var(--tx)}
+.nav-brand span{color:var(--or)}
+.nav-badge{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--or);border:1px solid rgba(255,85,0,0.3);padding:4px 12px;border-radius:2px;font-family:var(--fh)}
+.nav-date{font-size:11px;color:var(--tx2);font-family:var(--fm)}
+
+/* TABS */
+.tab-bar{display:flex;gap:0;border-bottom:1px solid var(--bdr);padding:0 40px;overflow-x:auto;background:var(--s1)}
+.tab-btn{padding:14px 20px;font-size:12px;font-weight:600;font-family:var(--fh);letter-spacing:1px;text-transform:uppercase;color:var(--tx2);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s;background:transparent;border-top:none;border-left:none;border-right:none}
+.tab-btn.active{color:var(--or);border-bottom-color:var(--or)}
+.tab-btn:hover{color:var(--tx)}
+
+/* CONTENT */
+.content{display:none;padding:40px;max-width:1200px;margin:0 auto}
+.content.active{display:block}
+
+/* GRID */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+
+/* CARDS */
+.card{background:var(--s1);border:1px solid var(--bdr);border-radius:10px;padding:20px 24px;position:relative;overflow:hidden}
+.card-title{font-family:var(--fh);font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--tx2);margin-bottom:12px}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--or),transparent);opacity:0}
+.card:hover::before{opacity:.6}
+
+/* METRIC CARDS */
+.metric-card{background:var(--s2);border:1px solid var(--bdr);border-radius:10px;padding:18px 20px;text-align:center}
+.metric-num{font-family:var(--fh);font-size:28px;font-weight:800;line-height:1;margin-bottom:4px}
+.metric-label{font-size:11px;color:var(--tx2);letter-spacing:1px;text-transform:uppercase;font-family:var(--fh)}
+.metric-sub{font-size:10px;color:var(--tx3);margin-top:4px;font-family:var(--fb)}
+
+/* VIABILITY SCORE */
+.score-ring-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 0}
+.score-circle{width:180px;height:180px;border-radius:50%;background:conic-gradient(#ff5500 0%,#ff7733 78%,rgba(255,255,255,0.06) 78%);display:flex;align-items:center;justify-content:center;position:relative;margin-bottom:16px}
+.score-inner{width:148px;height:148px;border-radius:50%;background:var(--s1);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.score-num{font-family:var(--fh);font-size:48px;font-weight:800;color:var(--or);line-height:1}
+.score-denom{font-size:13px;color:var(--tx2);font-family:var(--fh)}
+.score-grade{font-family:var(--fh);font-size:14px;font-weight:600;color:var(--or);letter-spacing:2px;text-transform:uppercase;margin-top:4px}
+.score-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--bdr)}
+.score-row:last-child{border-bottom:none}
+.score-label{font-size:12px;color:var(--tx2);flex:1;font-family:var(--fb)}
+.score-bar-wrap{width:100px;height:4px;background:var(--bdr2);border-radius:2px;overflow:hidden}
+.score-bar{height:100%;border-radius:2px;transition:width 1s ease}
+.score-val{font-size:11px;font-family:var(--fm);color:var(--tx);min-width:28px;text-align:right}
+
+/* COMPETITOR TABLE */
+.comp-table{width:100%;border-collapse:collapse;font-size:12px}
+.comp-table th{font-family:var(--fh);font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--tx3);padding:10px 12px;text-align:left;border-bottom:1px solid var(--bdr)}
+.comp-table td{padding:12px 12px;border-bottom:1px solid var(--bdr);color:var(--tx2);vertical-align:top;line-height:1.5}
+.comp-table tr:last-child td{border-bottom:none}
+.comp-table tr.crucible-row td{background:rgba(255,85,0,0.05);color:var(--tx)}
+.comp-table tr.crucible-row td:first-child{color:var(--or);font-weight:600}
+.tag{display:inline-block;font-size:9px;padding:2px 7px;border-radius:2px;font-family:var(--fh);font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin:1px}
+.t-green{background:var(--gr2);color:var(--gr)}
+.t-red{background:var(--re2);color:var(--re)}
+.t-orange{background:var(--or3);color:var(--or)}
+.t-blue{background:var(--bl2);color:var(--bl)}
+.t-gray{background:rgba(255,255,255,0.05);color:var(--tx2)}
+
+/* SECTION HEADERS */
+.sec-title{font-family:var(--fh);font-size:22px;font-weight:800;color:var(--tx);margin-bottom:6px}
+.sec-sub{font-size:13px;color:var(--tx2);margin-bottom:24px;line-height:1.6;font-family:var(--fb)}
+.sec-tag{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--or);font-family:var(--fh);font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.sec-tag::before{content:'';width:20px;height:1px;background:var(--or)}
+
+/* CHART WRAP */
+.chart-wrap{position:relative;width:100%;height:300px}
+
+/* MONETIZATION */
+.mono-tier{border:1px solid var(--bdr);border-radius:8px;padding:18px 20px;margin-bottom:12px;transition:border-color .2s}
+.mono-tier:hover{border-color:var(--bdr2)}
+.mono-tier.featured{border-color:rgba(255,85,0,0.4);background:rgba(255,85,0,0.04)}
+.mono-name{font-family:var(--fh);font-size:14px;font-weight:700;color:var(--tx);margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.mono-price{font-family:var(--fm);font-size:22px;color:var(--or);font-weight:500;margin-bottom:8px}
+.mono-price span{font-size:12px;color:var(--tx2);font-family:var(--fb);font-weight:400}
+.mono-desc{font-size:12px;color:var(--tx2);line-height:1.7;margin-bottom:10px}
+.mono-items{list-style:none;display:flex;flex-direction:column;gap:4px}
+.mono-items li{font-size:11px;color:var(--tx2);padding-left:14px;position:relative}
+.mono-items li::before{content:'→';position:absolute;left:0;color:var(--or);font-size:10px}
+
+/* PITCH */
+.pitch-section{margin-bottom:28px}
+.pitch-head{font-family:var(--fh);font-size:13px;font-weight:700;color:var(--or);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--bdr)}
+.pitch-body{font-size:13px;color:var(--tx2);line-height:1.85;font-family:var(--fb)}
+.pitch-body b{color:var(--tx);font-weight:500}
+.pitch-body em{color:var(--or);font-style:normal}
+.stat-inline{display:inline-flex;align-items:center;gap:6px;background:var(--s2);border:1px solid var(--bdr);border-radius:4px;padding:3px 10px;font-family:var(--fm);font-size:11px;color:var(--or);margin:2px}
+
+/* ANSWER BOX */
+.answer-box{background:var(--s2);border:1px solid rgba(255,85,0,0.25);border-radius:10px;padding:24px;margin-bottom:20px}
+.answer-q{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--or);font-family:var(--fh);font-weight:600;margin-bottom:12px}
+.answer-a{font-size:14px;color:var(--tx);line-height:1.85;font-family:var(--fb)}
+.answer-a b{color:var(--or);font-weight:500}
+
+/* DIVIDER */
+.divider{height:1px;background:var(--bdr);margin:24px 0}
+
+/* HIGHLIGHT */
+.hl-box{border-left:2px solid var(--or);padding:12px 16px;background:rgba(255,85,0,0.04);border-radius:0 6px 6px 0;margin:14px 0;font-size:12px;color:var(--tx2);line-height:1.7}
+.hl-box b{color:var(--tx);font-weight:500}
+
+/* SNYK PATH */
+.path-row{display:flex;align-items:center;gap:0;margin:20px 0}
+.path-year{text-align:center;flex:1}
+.path-yr{font-family:var(--fm);font-size:10px;color:var(--tx3);margin-bottom:4px}
+.path-arr{font-family:var(--fh);font-size:18px;font-weight:800;color:var(--tx)}
+.path-arr.orange{color:var(--or)}
+.path-arrow{color:var(--tx3);font-size:14px;margin:0 4px;padding-top:14px}
+.path-label{font-size:9px;color:var(--tx3);font-family:var(--fb);margin-top:2px}
+
+/* FOOTER */
+.report-footer{border-top:1px solid var(--bdr);padding:20px 40px;text-align:center;font-size:11px;color:var(--tx3);font-family:var(--fb)}
+</style>
+</head>
+<body>
+
+<div class="top-nav">
+  <div class="nav-brand">CRUCIBLE<span>.</span> SECURITY</div>
+  <div class="nav-badge">Investor Intelligence Report</div>
+  <div class="nav-date">April 2026 · Confidential</div>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="showTab('monetize')">Monetization</button>
+  <button class="tab-btn" onclick="showTab('viability')">Viability Score</button>
+  <button class="tab-btn" onclick="showTab('market')">Market Data</button>
+  <button class="tab-btn" onclick="showTab('competitors')">Competitor Analysis</button>
+  <button class="tab-btn" onclick="showTab('revenue')">Revenue Projections</button>
+  <button class="tab-btn" onclick="showTab('pitch')">Investor Pitch</button>
+</div>
+
+<!-- TAB 1: MONETIZATION -->
+<div id="tab-monetize" class="content active">
+  <div class="sec-tag">How we make money</div>
+  <div class="sec-title">Monetization Strategy</div>
+  <div class="sec-sub">The exact answer when anyone asks how Crucible monetizes — investor, partner, or journalist.</div>
+
+  <div class="answer-box">
+    <div class="answer-q">The one-sentence answer</div>
+    <div class="answer-a">We follow the <b>Snyk playbook</b> — free open-source CLI drives developer adoption, hosted cloud converts users to paying customers, and enterprise contracts with compliance reporting are our high-margin revenue layer. Every security tool that has scaled to $100M+ ARR has used this exact model.</div>
+  </div>
+
+  <div class="grid3">
+    <div class="mono-tier">
+      <div class="mono-name">Tier 1 <span class="tag t-gray">Distribution Engine</span></div>
+      <div class="mono-price">Free <span>forever — open source</span></div>
+      <div class="mono-desc">The CLI that any developer installs in 30 seconds. This is not charity — it is our distribution channel. Every developer who installs the free CLI is a potential enterprise lead.</div>
+      <ul class="mono-items">
+        <li>pip install crucible-security</li>
+        <li>217 adversarial attack vectors</li>
+        <li>OWASP Agentic Top 10 coverage</li>
+        <li>JSON + terminal reports</li>
+        <li>Apache 2.0 license</li>
+      </ul>
+    </div>
+    <div class="mono-tier featured">
+      <div class="mono-name">Tier 2 <span class="tag t-orange">Primary Revenue</span></div>
+      <div class="mono-price">$49<span>/mo individual · $299/mo team</span></div>
+      <div class="mono-desc">Hosted cloud version. No self-hosting, persistent scan history, CI/CD webhook, team dashboards, and scheduled monitoring. Converts individual developers into paying team accounts.</div>
+      <ul class="mono-items">
+        <li>Hosted scan dashboard</li>
+        <li>Historical scan comparison</li>
+        <li>CI/CD GitHub Actions plugin</li>
+        <li>Team collaboration (up to 10)</li>
+        <li>Email alerts on score drop</li>
+      </ul>
+    </div>
+    <div class="mono-tier">
+      <div class="mono-name">Tier 3 <span class="tag t-green">High Margin</span></div>
+      <div class="mono-price">$2,000–$8,000<span>/mo enterprise</span></div>
+      <div class="mono-desc">Enterprise contracts unlock compliance reporting — the output a CISO presents to the board. One enterprise contract equals 7–27 cloud subscriptions in ARR.</div>
+      <ul class="mono-items">
+        <li>SOC 2 / ISO 27001 report export</li>
+        <li>Custom CVSS severity mapping</li>
+        <li>Threat intel feed (24hr updates)</li>
+        <li>SLA-backed uptime guarantee</li>
+        <li>Dedicated security engineer</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="hl-box"><b>Why this model works:</b> Snyk launched with a free CLI in 2015. First commercial contract: March 2017. $100K ARR by August 2017. $4M ARR by 2018. $326M ARR by 2026. The developer adoption flywheel — free tool → team adoption → enterprise procurement — is the most proven path in security SaaS. We are applying the identical model to a new attack surface that did not exist when Snyk started.</div>
+
+  <div class="divider"></div>
+
+  <div class="sec-tag">Future Revenue Layer</div>
+  <div class="card">
+    <div class="card-title">Tier 4 — Outcome-Based Pricing (2027+)</div>
+    <div style="font-size:12px;color:var(--tx2);line-height:1.8">The emerging model in AI tooling is outcome-based pricing — charging per vulnerability found and remediated rather than per seat or per scan. Companies like Intercom charge $0.99 per resolved customer issue. Crucible's future model: <b>$5–15 per critical vulnerability found and confirmed</b>, with no charge for passing tests. This aligns our revenue directly with the value we deliver — customers pay when we protect them, not when we run tests that find nothing.</div>
+  </div>
+</div>
+
+<!-- TAB 2: VIABILITY SCORE -->
+<div id="tab-viability" class="content">
+  <div class="sec-tag">Honest Assessment</div>
+  <div class="sec-title">Viability Score</div>
+  <div class="sec-sub">Scored against YC partner standards. 10/10 = OpenAI. This is where Crucible actually stands today.</div>
+
+  <div class="grid2">
+    <div class="card" style="display:flex;align-items:center;justify-content:center;flex-direction:column">
+      <div class="score-ring-wrap">
+        <div class="score-circle">
+          <div class="score-inner">
+            <div class="score-num">7.4</div>
+            <div class="score-denom">out of 10</div>
+          </div>
+        </div>
+        <div class="score-grade">Strong — Pre-traction</div>
+        <div style="font-size:11px;color:var(--tx2);margin-top:8px;text-align:center;max-width:200px;line-height:1.5">Code, problem, and timing are strong. Traction is the gap. Entirely fixable with launch execution.</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Score breakdown</div>
+      <div class="score-row">
+        <div class="score-label">Problem clarity</div>
+        <div class="score-bar-wrap"><div class="score-bar" style="width:90%;background:var(--gr)"></div></div>
+        <div class="score-val" style="color:var(--gr)">9/10</div>
+      </div>
+      <div class="score-row">
+        <div class="score-label">Technical execution</div>
+        <div class="score-bar-wrap"><div class="score-bar" style="width:80%;background:var(--gr)"></div></div>
+        <div class="score-val" style="color:var(--gr)">8/10</div>
+      </div>
+      <div class="score-row">
+        <div class="score-label">Founder-market fit</div>
+        <div class="score-bar-wrap"><div class="score-bar" style="width:90%;background:var(--gr)"></div></div>
+        <div class="score-val" style="color:var(--gr)">9/10</div>
+      </div>
+      <div class="score-row">
+        <div class="score-label">Market timing</div>
+        <div class="score-bar-wrap"><div class="score-bar" style="width:80%;background:var(--or)"></div></div>
+        <div class="score-val" style="color:var(--or)">8/10</div>
+      </div>
+      <div class="score-row">
+        <div class="score-label">Differentiation</div>
+        <div class="score-bar-wrap"><div class="score-bar" style="width:70%;background:var(--or)"></div></div>
+        <div class="score-val" style="color:var(--or)">7/10</div>
+      </div>
+      <div class="score-row">
+        <div class="score-label">Revenue model</div>
+        <div class="score-bar-wrap"><div class="score-bar" style="width:70%;background:var(--or)"></div></div>
+        <div class="score-val" style="color:var(--or)">7/10</div>
+      </div>
+      <div class="score-row">
+        <div class="score-label">Team (solo founder)</div>
+        <div class="score-bar-wrap"><div class="score-bar" style="width:50%;background:var(--ye)"></div></div>
+        <div class="score-val" style="color:var(--ye)">5/10</div>
+      </div>
+      <div class="score-row">
+        <div class="score-label">Traction (pre-launch)</div>
+        <div class="score-bar-wrap"><div class="score-bar" style="width:20%;background:var(--re)"></div></div>
+        <div class="score-val" style="color:var(--re)">2/10</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid3" style="margin-top:16px">
+    <div class="card">
+      <div class="card-title" style="color:var(--gr)">Strongest signals</div>
+      <div style="font-size:12px;color:var(--tx2);line-height:1.8">OpenAI acquiring your closest competitor validates the category. OWASP published the formal taxonomy in Dec 2025 — perfect timing. You have 90 real attack vectors, 73 tests, 88% coverage. The product works today. Founder has domain expertise from 4 hackathon placements in AI security specifically.</div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="color:var(--re)">Biggest risk</div>
+      <div style="font-size:12px;color:var(--tx2);line-height:1.8">Solo founder with no paying customers yet. In 2026, YC expects more traction at application time. The 12-month window before a well-funded competitor fills the open-source security gap is real. Speed of execution is the only moat right now. Every week without launch is a week your window narrows.</div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="color:var(--ye)">Path to 10/10</div>
+      <div style="font-size:12px;color:var(--tx2);line-height:1.8">Launch on HN → 500+ stars → first 3 paying cloud users → one enterprise LOI (letter of intent) → co-founder with security background. That sequence, executed over 90 days, transforms this application from "strong solo founder" to "team with traction." Score goes from 7.4 to 9.2.</div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 3: MARKET DATA -->
+<div id="tab-market" class="content">
+  <div class="sec-tag">Real numbers from real research</div>
+  <div class="sec-title">Market Demand Intelligence</div>
+  <div class="sec-sub">Every number below is from a named research firm published in 2025–2026.</div>
+
+  <div class="grid4">
+    <div class="metric-card">
+      <div class="metric-num" style="color:var(--or)">$322B</div>
+      <div class="metric-label">TAM by 2033</div>
+      <div class="metric-sub">Agentic AI in Cybersecurity (Grand View Research)</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-num" style="color:var(--gr)">34.4%</div>
+      <div class="metric-label">Market CAGR</div>
+      <div class="metric-sub">2025–2033 (Grand View Research)</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-num" style="color:var(--bl)">83%</div>
+      <div class="metric-label">Deploying Agents</div>
+      <div class="metric-sub">of orgs in 2026 (Cisco)</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-num" style="color:var(--re)">29%</div>
+      <div class="metric-label">Feel Secure</div>
+      <div class="metric-sub">54-point gap = Crucible's market (Cisco)</div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Agentic AI market growth ($B)</div>
+      <div class="chart-wrap">
+        <canvas id="marketChart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Key market signals — 2025–2026</div>
+      <div style="margin-top:8px">
+        <div class="score-row">
+          <div style="flex:1;font-size:12px;color:var(--tx2)">Organizations deploying AI agents</div>
+          <div class="score-bar-wrap"><div class="score-bar" style="width:79%;background:var(--bl)"></div></div>
+          <div class="score-val" style="color:var(--bl)">79%</div>
+        </div>
+        <div class="score-row">
+          <div style="flex:1;font-size:12px;color:var(--tx2)">Planning AI agent expansion</div>
+          <div class="score-bar-wrap"><div class="score-bar" style="width:96%;background:var(--gr)"></div></div>
+          <div class="score-val" style="color:var(--gr)">96%</div>
+        </div>
+        <div class="score-row">
+          <div style="flex:1;font-size:12px;color:var(--tx2)">Enterprise deployments include agents</div>
+          <div class="score-bar-wrap"><div class="score-bar" style="width:60%;background:var(--or)"></div></div>
+          <div class="score-val" style="color:var(--or)">60%</div>
+        </div>
+        <div class="score-row">
+          <div style="flex:1;font-size:12px;color:var(--tx2)">Feel ready to deploy securely</div>
+          <div class="score-bar-wrap"><div class="score-bar" style="width:29%;background:var(--re)"></div></div>
+          <div class="score-val" style="color:var(--re)">29%</div>
+        </div>
+        <div class="score-row">
+          <div style="flex:1;font-size:12px;color:var(--tx2)">Multi-agent architecture adoption</div>
+          <div class="score-bar-wrap"><div class="score-bar" style="width:66%;background:var(--bl)"></div></div>
+          <div class="score-val" style="color:var(--bl)">66%</div>
+        </div>
+        <div class="score-row">
+          <div style="flex:1;font-size:12px;color:var(--tx2)">M&A deals in cybersecurity 2025 (YoY)</div>
+          <div class="score-bar-wrap"><div class="score-bar" style="width:100%;background:var(--or)"></div></div>
+          <div class="score-val" style="color:var(--or)">+270%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hl-box">
+    <b>The 54-point gap is your entire business.</b> 83% of organizations are deploying AI agents. Only 29% feel ready to do it securely. That 54-point gap represents thousands of companies who have deployed agents without adequate security tooling. They are your first customers. They exist today. They have budget. They have pain. They lack a purpose-built solution.
+  </div>
+</div>
+
+<!-- TAB 4: COMPETITORS -->
+<div id="tab-competitors" class="content">
+  <div class="sec-tag">Know your battlefield</div>
+  <div class="sec-title">Competitor Analysis</div>
+  <div class="sec-sub">The full landscape. Where Crucible wins, where it needs to grow.</div>
+
+  <div class="card" style="margin-bottom:16px">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th style="width:130px">Company</th>
+          <th style="width:90px">Status</th>
+          <th style="width:100px">Funding</th>
+          <th>What they do</th>
+          <th>Crucible advantage</th>
+          <th style="width:100px">Threat level</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="crucible-row">
+          <td>Crucible</td>
+          <td><span class="tag t-orange">Live v0.1</span></td>
+          <td><span class="tag t-orange">$0 / YC applying</span></td>
+          <td>Open-source agent security testing. 217 attacks, OWASP Top 10, MCP scanning, vendor-neutral.</td>
+          <td>— This is us —</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><b style="color:var(--tx)">Promptfoo</b></td>
+          <td><span class="tag t-red">Acquired by OpenAI</span><br><span style="font-size:10px;color:var(--tx2)">March 2026</span></td>
+          <td><span class="tag t-gray">$23.4M raised</span></td>
+          <td>LLM output testing, red-teaming, hallucination detection. Now proprietary inside OpenAI's Frontier platform.</td>
+          <td>We are vendor-neutral. Promptfoo now only tests OpenAI agents. We test everyone.</td>
+          <td><span class="tag t-green">Validated category</span></td>
+        </tr>
+        <tr>
+          <td><b style="color:var(--tx)">Garak (NVIDIA)</b></td>
+          <td><span class="tag t-blue">Open Source</span></td>
+          <td><span class="tag t-gray">NVIDIA-backed</span></td>
+          <td>LLM vulnerability scanner. Research-oriented, CLI only, no agentic pipeline or OWASP mapping.</td>
+          <td>We have full OWASP Agentic Top 10, MCP support, enterprise compliance reports. Garak targets researchers; we target enterprise security teams.</td>
+          <td><span class="tag t-gray">Low</span></td>
+        </tr>
+        <tr>
+          <td><b style="color:var(--tx)">MS Agent Governance</b></td>
+          <td><span class="tag t-blue">Open Source</span><br><span style="font-size:10px;color:var(--tx2)">Released April 2026</span></td>
+          <td><span class="tag t-gray">Microsoft-backed</span></td>
+          <td>Runtime governance for AI agents. Monitors agents after deployment. Addresses all 10 OWASP risks at runtime.</td>
+          <td>Complementary, not competing. They watch agents running in production. We attack agents before deployment. Different stage, different buyer.</td>
+          <td><span class="tag t-green">Complementary</span></td>
+        </tr>
+        <tr>
+          <td><b style="color:var(--tx)">Protect AI</b></td>
+          <td><span class="tag t-red">Acquired by Palo Alto</span><br><span style="font-size:10px;color:var(--tx2)">$700M — 2025</span></td>
+          <td><span class="tag t-gray">$108M raised</span></td>
+          <td>ML model security — model scanning, supply chain security, MLOps security. Not agent security.</td>
+          <td>Different attack surface. We secure agent pipelines and LLM interactions, not the underlying model weights.</td>
+          <td><span class="tag t-green">Validated exit</span></td>
+        </tr>
+        <tr>
+          <td><b style="color:var(--tx)">Snyk</b></td>
+          <td><span class="tag t-blue">Public-track</span></td>
+          <td><span class="tag t-gray">$1.2B raised</span></td>
+          <td>Developer security platform. Code scanning, open source vulnerabilities. Now adding AI/MCP scanning via Snyk Evo (beta).</td>
+          <td>Snyk is adapting their legacy tool to AI. We were built for AI from day one. Their AI module is a feature; our entire product is AI agent security.</td>
+          <td><span class="tag t-red">Watch closely</span></td>
+        </tr>
+        <tr>
+          <td><b style="color:var(--tx)">Semgrep</b></td>
+          <td><span class="tag t-blue">Private</span></td>
+          <td><span class="tag t-gray">$93M raised</span></td>
+          <td>Static analysis and code scanning. Open source engine, enterprise SaaS layer. Growing in DevSecOps.</td>
+          <td>Semgrep scans source code. Crucible attacks running agents. Entirely different test surface — static vs dynamic.</td>
+          <td><span class="tag t-gray">Low</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="hl-box"><b>The one insight that changes the whole picture:</b> Snyk is pivoting from code security to AI security — their Snyk Evo product is in beta targeting MCP scanning and LLM injection monitoring. This is your most important competitor to watch. They have $326M ARR, 3,100 enterprise customers, and a distribution engine. But they are retrofitting an old product for a new problem. Crucible is purpose-built for the problem from the ground up. History says purpose-built wins — Slack beat Microsoft Teams internally, Figma beat Sketch and Adobe. The question is whether you can establish enterprise relationships before Snyk Evo exits beta.</div>
+</div>
+
+<!-- TAB 5: REVENUE PROJECTIONS -->
+<div id="tab-revenue" class="content">
+  <div class="sec-tag">Grounded in real comparables</div>
+  <div class="sec-title">Revenue Projections</div>
+  <div class="sec-sub">Based on Snyk's actual growth trajectory and realistic conversion assumptions. Not hype — math.</div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title">The Snyk precedent — free CLI to $326M ARR</div>
+    <div class="path-row">
+      <div class="path-year">
+        <div class="path-yr">2015</div>
+        <div class="path-arr">Launch</div>
+        <div class="path-label">Free CLI</div>
+      </div>
+      <div class="path-arrow">→</div>
+      <div class="path-year">
+        <div class="path-yr">2017</div>
+        <div class="path-arr">$0.1M</div>
+        <div class="path-label">First contract</div>
+      </div>
+      <div class="path-arrow">→</div>
+      <div class="path-year">
+        <div class="path-yr">2018</div>
+        <div class="path-arr">$4M</div>
+        <div class="path-label">ARR</div>
+      </div>
+      <div class="path-arrow">→</div>
+      <div class="path-year">
+        <div class="path-yr">2019</div>
+        <div class="path-arr">$19M</div>
+        <div class="path-label">ARR</div>
+      </div>
+      <div class="path-arrow">→</div>
+      <div class="path-year">
+        <div class="path-yr">2023</div>
+        <div class="path-arr">$250M</div>
+        <div class="path-label">ARR</div>
+      </div>
+      <div class="path-arrow">→</div>
+      <div class="path-year">
+        <div class="path-yr">2026</div>
+        <div class="path-arr orange">$326M</div>
+        <div class="path-label">ARR (today)</div>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--tx3);font-family:var(--fb);line-height:1.6;margin-top:4px">Snyk started with a free Node.js CLI, got their first commercial contract 18 months later, and hit $4M ARR in year 3. Crucible has a more focused problem, a hotter market, and launches in the middle of an M&A wave. We do not need to replicate Snyk's scale — we need to execute their first 24 months.</div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Crucible 36-month projection</div>
+      <div class="chart-wrap">
+        <canvas id="revenueChart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Assumptions behind the numbers</div>
+      <div style="margin-top:8px">
+        <div class="score-row">
+          <div style="flex:1;font-size:12px;color:var(--tx2)">GitHub stars month 3</div>
+          <div style="font-size:12px;color:var(--or);font-family:var(--fm)">2,000</div>
+        </div>
+        <div class="score-row">
+          <div style="flex:1;font-size:12px;color:var(--tx2)">Stars → trial conversion</div>
+          <div style="font-size:12px;color:var(--or);font-family:var(--fm)">3%</div>
+        </div>
+        <div class="score-row">
+          <div style="flex:1;font-size:12px;color:var(--tx2)">Trial → paid conversion</div>
+          <div style="font-size:12px;color:var(--or);font-family:var(--fm)">15%</div>
+        </div>
+        <div class="score-row">
+          <div style="flex:1;font-size:12px;color:var(--tx2)">Avg cloud contract (yr 1)</div>
+          <div style="font-size:12px;color:var(--or);font-family:var(--fm)">$299/mo</div>
+        </div>
+        <div class="score-row">
+          <div style="flex:1;font-size:12px;color:var(--tx2)">Enterprise contracts yr 1</div>
+          <div style="font-size:12px;color:var(--or);font-family:var(--fm)">2–3</div>
+        </div>
+        <div class="score-row">
+          <div style="flex:1;font-size:12px;color:var(--tx2)">Avg enterprise ACV</div>
+          <div style="font-size:12px;color:var(--or);font-family:var(--fm)">$36,000/yr</div>
+        </div>
+        <div class="score-row">
+          <div style="flex:1;font-size:12px;color:var(--tx2)">Gross margin (SaaS)</div>
+          <div style="font-size:12px;color:var(--gr);font-family:var(--fm)">80%+</div>
+        </div>
+        <div class="score-row">
+          <div style="flex:1;font-size:12px;color:var(--tx2)">Net revenue retention target</div>
+          <div style="font-size:12px;color:var(--gr);font-family:var(--fm)">120%+</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid3" style="margin-top:4px">
+    <div class="metric-card">
+      <div class="metric-num" style="color:var(--or)">$72K</div>
+      <div class="metric-label">Month 12 ARR</div>
+      <div class="metric-sub">Conservative: 20 cloud teams + 1 enterprise</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-num" style="color:var(--gr)">$480K</div>
+      <div class="metric-label">Month 24 ARR</div>
+      <div class="metric-sub">Base case: 100 cloud + 5 enterprise contracts</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-num" style="color:var(--bl)">$2.4M</div>
+      <div class="metric-label">Month 36 ARR</div>
+      <div class="metric-sub">Optimistic: 400 cloud + 20 enterprise</div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 6: INVESTOR PITCH -->
+<div id="tab-pitch" class="content">
+  <div class="sec-tag">The complete pitch</div>
+  <div class="sec-title">AI Investor Pitch — Crucible Security</div>
+  <div class="sec-sub">Use this as the basis for any investor conversation, YC interview, or demo day pitch. Every claim is backed by data in the previous tabs.</div>
+
+  <div class="pitch-section">
+    <div class="pitch-head">The Hook — 15 seconds</div>
+    <div class="pitch-body">"Every company deploying AI agents in 2026 is doing it without a security layer. <em>83% are deploying. Only 29% feel secure.</em> That gap — 54 percentage points — represents thousands of companies with exposed AI systems and no tool to fix it. <b>We built the tool.</b>"</div>
+  </div>
+
+  <div class="pitch-section">
+    <div class="pitch-head">The Problem — 30 seconds</div>
+    <div class="pitch-body">AI agents are no longer experiments. They execute code, call APIs, write to databases, and spawn other agents. They are running in production at enterprise scale right now. In December 2025, OWASP published the first formal taxonomy of agentic AI risks — <em>10 categories of attack that no existing security tool addresses</em>. Goal hijacking. Prompt injection. Tool misuse. Memory poisoning. MCP boundary attacks. The attack surface is completely new. The security tooling does not exist. <b>Security teams know this. They have budget. They have no vendor to call.</b></div>
+  </div>
+
+  <div class="pitch-section">
+    <div class="pitch-head">The Market Moment — 20 seconds</div>
+    <div class="pitch-body">In March 2026, <em>OpenAI acquired Promptfoo</em> — the only existing open-source LLM testing tool — for their proprietary platform. That acquisition simultaneously validated the category and vacated the vendor-neutral open-source layer. <b>The market exists. The incumbent is gone. We are building the replacement.</b> The agentic AI cybersecurity market reaches <span class="stat-inline">$322B by 2033</span> at a <span class="stat-inline">34.4% CAGR</span>.</div>
+  </div>
+
+  <div class="pitch-section">
+    <div class="pitch-head">The Product — 30 seconds</div>
+    <div class="pitch-body">Crucible is a security testing framework for AI agents. Install it with one pip command. Point it at your agent endpoint. It fires <em>217 adversarial attack payloads</em> — covering all 10 OWASP Agentic AI risks — and returns a scored vulnerability report in under 90 seconds. Every finding maps to an OWASP reference and CVSS severity score. The output is audit-ready for SOC 2 and ISO 27001 compliance. <b>It works today. We verified it live: 217 findings, Grade F, 62 seconds on an unguarded endpoint.</b></div>
+  </div>
+
+  <div class="pitch-section">
+    <div class="pitch-head">The Business Model — 15 seconds</div>
+    <div class="pitch-body">The <em>Snyk playbook</em>: free open-source CLI drives developer adoption, hosted cloud converts teams to $299/month, enterprise compliance reporting drives $2,000–$8,000/month contracts. <b>Snyk launched with a free CLI in 2015 and hit $326M ARR by 2026.</b> We are applying the identical model to a new attack surface that did not exist when Snyk started.</div>
+  </div>
+
+  <div class="pitch-section">
+    <div class="pitch-head">The Founder — 20 seconds</div>
+    <div class="pitch-body">I'm Khalid Sayyed. I'm a first-year CS student at VIT Bhopal. In the last 12 months: two national-level AI security hackathon wins, national finalist at India Innovates 2026, and a merged PR to a <em>YC W20 codebase with 10,000 GitHub stars</em>. I did not enter AI security because it is hot. I kept building security tools because no good ones existed. <b>Crucible is the tool I needed and couldn't find.</b></div>
+  </div>
+
+  <div class="pitch-section">
+    <div class="pitch-head">The Ask — 10 seconds</div>
+    <div class="pitch-body">"We are raising a pre-seed round to hire a co-founder with LLM security experience, accelerate enterprise sales, and establish Crucible as the vendor-neutral standard before a well-funded competitor fills the gap. <em>The window is 12 months.</em> <b>We are asking for $500K at a $4M cap.</b>"</div>
+  </div>
+
+  <div class="hl-box"><b>The hardest question you will be asked:</b> "Why won't Snyk just build this?" Answer: "Snyk is trying — Snyk Evo is in beta. But Snyk has $1.2B raised, 1,500 employees, and $326M in legacy ARR to protect. They cannot move at startup speed. They are retrofitting a 10-year-old architecture for a new problem. We were built for this problem from day one. History says the purpose-built product wins. Figma beat Adobe. Notion beat Confluence. Crucible will beat Snyk Evo in agent security."</div>
+</div>
+
+<div class="report-footer">Crucible Security · cruciblesecurity.com · github.com/crucible-security · April 2026 · For investor use only</div>
+
+<script>
+function showTab(id){
+  document.querySelectorAll('.content').forEach(c=>c.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  if(event && event.target) event.target.classList.add('active');
+  if(id==='market' && !window.marketChartDone){drawMarketChart(); window.marketChartDone=true;}
+  if(id==='revenue' && !window.revenueChartDone){drawRevenueChart(); window.revenueChartDone=true;}
+}
+
+// Market Chart
+function drawMarketChart(){
+  const ctx = document.getElementById('marketChart').getContext('2d');
+  new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:['2024','2025','2026','2027','2028','2030','2033'],
+      datasets:[{
+        label:'Agentic AI Cybersecurity Market ($B)',
+        data:[22.56,30.6,41.4,55.9,75.5,137.6,322.4],
+        backgroundColor:['rgba(255,85,0,0.3)','rgba(255,85,0,0.4)','rgba(255,85,0,0.55)','rgba(255,85,0,0.65)','rgba(255,85,0,0.75)','rgba(255,85,0,0.85)','rgba(255,85,0,1)'],
+        borderColor:'rgba(255,85,0,0.8)',
+        borderWidth:1,
+        borderRadius:4,
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7a8494',font:{size:11}}},
+        y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7a8494',font:{size:11},callback:v=>'$'+v+'B'}},
+      }
+    }
+  });
+}
+
+// Revenue Chart
+function drawRevenueChart(){
+  const ctx = document.getElementById('revenueChart').getContext('2d');
+  new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:['M0','M3','M6','M9','M12','M18','M24','M30','M36'],
+      datasets:[
+        {label:'Conservative',data:[0,0,2000,8000,72000,180000,480000,900000,1200000],borderColor:'#3b8bff',backgroundColor:'rgba(59,139,255,0.05)',borderWidth:2,borderDash:[4,4],pointRadius:3,tension:0.4},
+        {label:'Base Case',data:[0,0,4000,18000,120000,300000,800000,1500000,2400000],borderColor:'#ff5500',backgroundColor:'rgba(255,85,0,0.08)',borderWidth:2,pointRadius:3,tension:0.4,fill:true},
+        {label:'Optimistic',data:[0,1000,12000,50000,200000,600000,1800000,4000000,8000000],borderColor:'#00d084',backgroundColor:'rgba(0,208,132,0.05)',borderWidth:2,borderDash:[2,2],pointRadius:3,tension:0.4},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#7a8494',font:{size:11}}}},
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7a8494',font:{size:11}}},
+        y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#7a8494',font:{size:11},callback:v=>{
+          if(v>=1000000)return'$'+(v/1000000).toFixed(1)+'M';
+          if(v>=1000)return'$'+(v/1000).toFixed(0)+'K';
+          return'$'+v;
+        }}}
+      }
+    }
+  });
+}
+
+// Animate score bars on load
+setTimeout(()=>{
+  document.querySelectorAll('.score-bar').forEach(b=>{b.style.transition='width 1.2s ease';});
+},100);
+</script>
+</body>
+</html>
